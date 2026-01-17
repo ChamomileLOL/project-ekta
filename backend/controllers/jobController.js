@@ -1,15 +1,21 @@
 const User = require('../models/User');
 
-exports.matchJobs = async (req, res) => {
+// Look for your POST or registration function
+exports.registerUser = async (req, res) => {
     try {
-    const newUser = await User.create(req.body);
-    res.status(201).json(newUser);
-} catch (error) {
-    if (error.code === 11000) {
-        return res.status(400).json({ message: "Email already exists!" });
+        const newUser = await User.create(req.body);
+        res.status(201).json(newUser);
+    } catch (error) {
+        // ADD THIS PART:
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                message: "Duplicate Error", 
+                detail: "This person is already in the database!" 
+            });
+        }
+        res.status(500).json({ 
+            message: "Server Error", 
+            detail: error.message 
+        });
     }
-    // Only log real, scary errors (like database connection loss)
-    console.error("UNEXPECTED ERROR:", error); 
-    res.status(500).json({ message: "Internal Server Error" });
-}
 };
