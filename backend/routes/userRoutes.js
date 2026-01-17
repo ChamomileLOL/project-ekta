@@ -5,36 +5,41 @@ const jwt = require('jsonwebtoken');
 const { protect, civilDiscourse } = require('../middleware/authMiddleware');
 const { matchJobs } = require('../controllers/jobController');
 
-// 1. REGISTRATION ROUTE WITH ERROR HANDLING
+// REGISTRATION / UPDATE ROUTE
 router.post('/register', civilDiscourse, async (req, res) => {
     try {
         const { name, email, password, skills } = req.body;
-        
-        // This line is where the duplicate error happens
-        const user = await User.create({ name, email, password, skills });
-        
+
+        // Use findOneAndUpdate with 'upsert: true'
+        // This means: If user exists, update skills. If not, create new user.
+        const user = await User.findOneAndUpdate(
+            { email: email.toLowerCase() }, // Find by email
+            { 
+                name, 
+                password, // Note: In a real app, hash this before saving
+                $addToSet: { skills: { $each: skills } } // Adds new skills without duplicates
+            },
+            { new: true, upsert: true, runValidators: true }
+        );
+
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-        res.status(201).json({ token, user });
+        
+        // Return a custom status so the user knows if they were updated
+        res.status(200).json({ 
+            message: "Profile synchronized successfully", 
+            token, 
+            user 
+        });
 
     } catch (error) {
-        // Handle MongoDB Duplicate Key Error (Code 11000)
-        if (error.code === 11000) {
-            return res.status(400).json({ 
-                message: "Duplicate Error", 
-                detail: "This person/email is already in the database!" 
-            });
-        }
-        
-        // Handle other general errors
-        console.error("Signup Error:", error.message);
+        console.error("Sync Error:", error.message);
         res.status(500).json({ 
-            message: "Server Error", 
+            message: "Server Error during synchronization", 
             detail: error.message 
         });
     }
 });
 
-// 2. THE MERIT ROUTE
 router.get('/opportunities', protect, matchJobs);
 
 module.exports = router;
