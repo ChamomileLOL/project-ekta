@@ -5,11 +5,11 @@ exports.matchJobs = async (req, res) => {
     const newUser = await User.create(req.body);
     res.status(201).json(newUser);
 } catch (error) {
-    // Check if the error is a MongoDB duplicate key error (code 11000)
     if (error.code === 11000) {
-        return res.status(400).json({ message: "This email is already registered!" });
+        return res.status(400).json({ message: "Email already exists!" });
     }
-    console.error(error);
+    // Only log real, scary errors (like database connection loss)
+    console.error("UNEXPECTED ERROR:", error); 
     res.status(500).json({ message: "Internal Server Error" });
 }
 };
