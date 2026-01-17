@@ -12,7 +12,7 @@ function App() {
     try {
       const skillsArray = skills.split(',').map(s => s.trim());
       // Hitting the 'Civil Discourse' Middleware
-      const res = await axios.post('http://localhost:5000/api/users/register', {
+      const res = await axios.post('https://project-ekta-api.onrender.com/api/users/register', {
         name, email: `${name}@test.com`, password: '123', skills: skillsArray, bio: "I love Unions" // Testing the filter
       });
       setToken(res.data.token);
